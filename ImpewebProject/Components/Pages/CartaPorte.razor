@@ -1,0 +1,60 @@
+﻿@page "/cartaporte"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using ImpewebProject.Services
+@using ImpewebProject.Models
+@using ImpewebProject.Components.Tables
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ICartaPorteService CartaPorteService
+@inject IAuditoriaService AuditoriaService
+
+@if (cartaPorteList == null)
+{
+    <div class="d-flex justify-content-center mt-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando datos...</span>
+        </div>
+    </div>
+}
+else if (cartaPorteList.Count == 0)
+{
+    <div class="alert alert-warning shadow-sm mt-3">
+        <i class="bi bi-info-circle me-2"></i> No se encontraron registros de Carta Porte para este cliente en el periodo actual.
+    </div>
+}
+else
+{
+    <TableCartaPorte cartaPorteList="@cartaPorteList" EsAdmin="@EsAdmin" RfcActual="@RfcActual" AnioActual="anioSeleccionado"
+                     OnAnioChanged="CargarPorAnio" />
+}
+
+@code {
+    private List<VwResumenCartaPorte>? cartaPorteList;
+    private bool EsAdmin = false;
+    private string RfcActual = "";
+    private int anioSeleccionado = DateTime.Now.Year;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            RfcActual = user.Identity.Name ?? "";
+            EsAdmin = user.IsInRole("Administrador");
+        }
+        cartaPorteList = await CartaPorteService.ObtenerCartasPorteAsync(anioSeleccionado, RfcActual, EsAdmin);
+
+        string rolUsuario = EsAdmin ? "Administrador" : "Cliente";
+        await AuditoriaService.RegistrarAccionAsync(RfcActual, $"Consultó el módulo de Carta Porte como {rolUsuario}");
+    }
+
+    private async Task CargarPorAnio(int nuevoAnio)
+    {
+        anioSeleccionado = nuevoAnio;
+        cartaPorteList = await CartaPorteService.ObtenerCartasPorteAsync(anioSeleccionado, RfcActual, EsAdmin);
+    }
+}

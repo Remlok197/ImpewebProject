@@ -1,0 +1,134 @@
+﻿@page "/login"
+@using ImpewebProject.Models
+@using ImpewebProject.Data
+@using Microsoft.AspNetCore.Components.Authorization
+@inject ImpewebContext Db
+@inject NavigationManager NavManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="min-h-screen bg-[#0F172A] flex items-center justify-center p-6">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div class="p-8 sm:p-12">
+            <div class="flex flex-col items-center mb-10">
+                <img src="/Impeweb Logo.jpg" alt="Impeweb Logo" style="max-height: 80px;" />
+                <div class="items-center justify-center">
+                    <h2 class="text-2xl font-bold text-slate-900 text-center">Bienvenido al Portal de Impeweb</h2>
+                </div>
+            </div>
+
+            @if (MostrarError)
+            {
+                <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6 flex items-center gap-3 animate-pulse">
+                    <span class="material-symbols-outlined">error</span>
+                    <p class="text-sm font-medium">@MensajeError</p>
+                </div>
+            }
+
+            <EditForm Model="loginModel" OnValidSubmit="ProcesarLogin" class="space-y-6">
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">RFC de la Empresa</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">domain</span>
+                        <InputText @bind-Value="loginModel.RFC" placeholder="ABC010101XXX" style="text-transform: uppercase;"
+                                   class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" />
+                    </div>
+                </div>
+
+                <div>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
+                        <input type="@(mostrarPassword ? "text" : "password")" @bind="loginModel.Password" placeholder="••••••••"
+                               class="w-full pl-10 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" />
+
+                        <button type="button" @onclick="TogglePassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors">
+                            <span class="material-symbols-outlined">@(mostrarPassword ? "visibility_off" : "visibility")</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" disabled="@Cargando" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed">
+                    @(Cargando ? "Autenticando..." : "Iniciar Sesión")
+                    @if (!Cargando)
+                    {
+                        <span class="material-symbols-outlined">arrow_forward</span>
+                    }
+                    else
+                    {
+                        <span class="material-symbols-outlined animate-spin">progress_activity</span>
+                    }
+                </button>
+            </EditForm>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private LoginDto loginModel = new LoginDto();
+    private bool MostrarError = false;
+    private string MensajeError = "";
+    private bool Cargando = false;
+    private bool mostrarPassword = false;
+    private bool recordarSesion = false;
+
+    private void TogglePassword() => mostrarPassword = !mostrarPassword;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            NavManager.NavigateTo("/home");
+        }
+    }
+
+    private async Task ProcesarLogin()
+    {
+        MostrarError = false;
+        Cargando = true;
+        await Task.Delay(500);
+
+        try
+        {
+            var rfcLimpio = loginModel.RFC?.Trim().ToUpper() ?? "";
+            var usuarioDb = Db.UsuarioWeb.FirstOrDefault(u => u.RFC == rfcLimpio);
+
+            if (usuarioDb != null && BCrypt.Net.BCrypt.Verify(loginModel.Password, usuarioDb.PasswordHash))
+            {
+                if (!usuarioDb.Activo)
+                {
+                    MensajeError = "Esta cuenta se encuentra inactiva.";
+                    MostrarError = true;
+                    Cargando = false;
+                    return;
+                }
+
+                var customAuth = (ImpewebProject.Services.CustomAuthStateProvider)AuthStateProvider;
+                await customAuth.IniciarSesion(usuarioDb.RFC, usuarioDb.Rol ?? "Cliente");
+
+                NavManager.NavigateTo("/home");
+            }
+            else
+            {
+                MensajeError = "RFC o contraseña incorrectos.";
+                MostrarError = true;
+            }
+        }
+        catch (Exception)
+        {
+            MensajeError = "Error de conexión con el servidor.";
+            MostrarError = true;
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    public class LoginDto
+    {
+        public string RFC { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+}

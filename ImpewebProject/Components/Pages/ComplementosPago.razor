@@ -1,0 +1,63 @@
+﻿@page "/complementospago"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using ImpewebProject.Services
+@using ImpewebProject.Models
+@using ImpewebProject.Components.Tables
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IComplementosPagoService ComplementosPagoService
+@inject IAuditoriaService AuditoriaService
+@inject NavigationManager NavManager
+
+<h3 class="mb-4">Complementos de Pago</h3>
+
+@if (complementosPagoList == null)
+{
+    <div class="d-flex justify-content-center mt-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando datos...</span>
+        </div>
+    </div>
+}
+else if (complementosPagoList.Count == 0)
+{
+    <div class="alert alert-warning shadow-sm mt-3">
+        <i class="bi bi-info-circle me-2"></i> No se encontraron Complementos de Pago para este cliente en el periodo actual.
+    </div>
+}
+else
+{
+    <TableComplementosPago complementoPagoList="complementosPagoList" EsAdmin="@EsAdmin" RfcActual="@RfcActual" AnioActual="anioSeleccionado"
+                           OnAnioChanged="CargarPorAnio" />
+}
+
+@code {
+    private List<VwResumenComplementosPago>? complementosPagoList;
+    private bool EsAdmin = false;
+    private string RfcActual = "";
+    private int anioSeleccionado = DateTime.Now.Year;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            RfcActual = user.Identity.Name ?? "";
+            EsAdmin = user.IsInRole("Administrador");
+        }
+        complementosPagoList = await ComplementosPagoService.ObtenerComplemetosPagoAsync(anioSeleccionado, RfcActual, EsAdmin);
+
+        string rolUsuario = EsAdmin ? "Administrador" : "Cliente";
+        await AuditoriaService.RegistrarAccionAsync(RfcActual, $"Consultó el módulo de Complementos de Pago como {rolUsuario}");
+    }
+
+    private async Task CargarPorAnio(int nuevoAnio)
+    {
+        anioSeleccionado = nuevoAnio;
+        complementosPagoList = await ComplementosPagoService.ObtenerComplemetosPagoAsync(anioSeleccionado, RfcActual, EsAdmin);
+    }
+}

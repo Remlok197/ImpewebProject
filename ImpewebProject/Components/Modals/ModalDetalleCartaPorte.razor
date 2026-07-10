@@ -1,0 +1,147 @@
+﻿@using ImpewebProject.Models
+@using ImpewebProject.Services
+@inject ICartaPorteService CartaPorteService
+
+@if (Mostrar)
+{
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in">
+        <div class="bg-white w-full max-w-6xl max-h-[92vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-zoom-in">
+            
+            <div class="px-8 py-5 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900">Carta Porte 3.0 - Detalle de Mercancías</h3>
+                    <p class="text-sm text-slate-500 font-mono">Folio: @CartaPorteId</p>
+                </div>
+                <button @onclick="CerrarModal" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-auto p-8">
+                @if (cargando)
+                {
+                    <div class="flex flex-col items-center justify-center py-20">
+                        <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        <p class="mt-4 text-slate-500 text-sm font-medium">Cargando mercancías...</p>
+                    </div>
+                }
+                else if (header == null)
+                {
+                    <div class="text-center py-20 text-slate-400">
+                        <span class="material-symbols-outlined text-5xl mb-2">inventory_2</span>
+                        <p>No se encontraron datos para esta Carta Porte.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="flex flex-col md:flex-row justify-end gap-4 mb-6">
+                        <div class="bg-yellow-50/50 border border-yellow-200 px-4 py-2 rounded-lg flex items-center gap-3">
+                            <span class="text-xs font-bold text-slate-600 uppercase">Folio Fiscal:</span>
+                            <span class="text-sm font-mono font-bold text-slate-900">@header.UUID</span>
+                        </div>
+                        <div class="bg-yellow-50/50 border border-yellow-200 px-4 py-2 rounded-lg flex items-center gap-3">
+                            <span class="text-xs font-bold text-slate-600 uppercase">IdCCP:</span>
+                            <span class="text-sm font-mono font-bold text-slate-900">@header.IdCCP</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 bg-slate-50 p-6 rounded-xl border border-slate-200 mb-8">
+                        <div>
+                            <span class="block text-xs font-bold text-slate-500 mb-1">Peso Bruto Total:</span>
+                            <span class="text-lg font-bold text-slate-900">@header.PesoBrutoTotal?.ToString("N3")</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs font-bold text-slate-500 mb-1">Peso Neto Total:</span>
+                            <span class="text-lg font-bold text-slate-900">@header.PesoNetoTotal?.ToString("N3")</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs font-bold text-slate-500 mb-1">Cargo Por Tasación:</span>
+                            <span class="text-lg font-bold text-slate-900">@header.CargoPorTasacion?.ToString("N2")</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs font-bold text-slate-500 mb-1">Unidad Peso:</span>
+                            <span class="text-lg font-bold text-slate-900">@header.UnidadPeso</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs font-bold text-slate-500 mb-1">Número Total Mercancías:</span>
+                            <span class="text-lg font-bold text-slate-900">@header.NumTotalMercancias</span>
+                        </div>
+                        <div class="md:col-span-2">
+                            <span class="block text-xs font-bold text-slate-500 mb-1">Logística Inversa (Recolección/Devolución):</span>
+                            <span class="text-lg font-bold text-slate-900">@(string.IsNullOrEmpty(header.LogisticaInversaRecoleccionDevolucion) ? "N/A" : header.LogisticaInversaRecoleccionDevolucion)</span>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                        <table class="w-full text-left border-collapse min-w-max">
+                            <thead class="bg-slate-800 text-white">
+                                <tr>
+                                    <th class="px-4 py-3 text-[10px] font-bold uppercase">BienesTransp</th>
+                                    <th class="px-4 py-3 text-[10px] font-bold uppercase">Descripción</th>
+                                    <th class="px-4 py-3 text-[10px] font-bold uppercase text-right text-emerald-400">Cantidad</th>
+                                    <th class="px-4 py-3 text-[10px] font-bold uppercase text-center">ClaveUnidad</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @if (mercancias != null && mercancias.Any())
+                                {
+                                    @foreach (var m in mercancias)
+                                    {
+                                        <tr class="hover:bg-slate-50/50 transition-colors">
+                                            <td class="px-4 py-3 text-xs font-bold text-slate-700 font-mono">@m.BienesTransp</td>
+                                            <td class="px-4 py-3 text-xs text-slate-700 whitespace-pre-wrap">@m.Descripcion</td>
+                                            <td class="px-4 py-3 text-xs text-right font-bold text-emerald-600">@m.Cantidad?.ToString("N2")</td>
+                                            <td class="px-4 py-3 text-xs text-center text-slate-500 font-mono">@m.ClaveUnidad</td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="6" class="px-4 py-8 text-center text-slate-400 text-sm">
+                                            No hay mercancías registradas.
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <div class="px-8 py-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+                <button @onclick="CerrarModal" class="px-6 py-2 bg-slate-800 text-white font-bold rounded-lg hover:bg-slate-900 transition-colors shadow-lg">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Mostrar { get; set; }
+    [Parameter] public string? CartaPorteId { get; set; }
+    [Parameter] public EventCallback OnCerrar { get; set; }
+
+    private VwDetalleCartaPorteHeader? header;
+    private List<VwDetalleCartaPorteMercancia>? mercancias;
+    private bool cargando = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Mostrar && !string.IsNullOrEmpty(CartaPorteId))
+        {
+            cargando = true;
+            header = await CartaPorteService.ObtenerDetalleHeaderAsync(CartaPorteId);
+            mercancias = await CartaPorteService.ObtenerDetalleMercanciasAsync(CartaPorteId);
+            cargando = false;
+        }
+    }
+
+    private async Task CerrarModal()
+    {
+        header = null;
+        mercancias = null;
+        await OnCerrar.InvokeAsync();
+    }
+}

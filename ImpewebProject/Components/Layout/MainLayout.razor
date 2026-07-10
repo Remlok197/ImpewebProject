@@ -1,0 +1,85 @@
+﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager NavManager
+
+<div class="min-h-screen bg-[#F7F9FB] flex relative overflow-x-hidden">
+
+    @if (EsPaginaDeAutenticacion)
+    {
+        <main class="w-full">
+            @Body
+        </main>
+    }
+    else
+    {
+        @if (isSidebarOpen)
+        {
+            <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[45] transition-opacity"
+                 @onclick="ToggleSidebar"></div>
+        }
+
+        <div class="fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out @(isSidebarOpen ? "translate-x-0" : "-translate-x-full")">
+            <NavMenu OnClose="ToggleSidebar" />
+        </div>
+
+        <div class="flex-1 flex flex-col min-w-0">
+
+            <header class="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 md:px-8 z-40 sticky top-0">
+                <div class="flex items-center gap-4 flex-1">
+                    <button @onclick="ToggleSidebar" class="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors">
+                        <span class="material-symbols-outlined text-2xl">menu</span>
+                    </button>
+
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <AuthorizeView>
+                        <Authorized>
+                            <div class="hidden sm:flex flex-col text-right border-l border-slate-200 pl-4">
+                                <p class="text-sm font-semibold text-slate-900 leading-tight">@context.User.Identity?.Name</p>
+                                <p class="text-xs text-blue-600 font-medium">@(context.User.IsInRole("Administrador") ? "Administrador" : "Cliente")</p>
+                            </div>
+                            <button class="text-slate-400 hover:text-red-500 transition-colors" title="Salir" @onclick="CerrarSesion">
+                                <span class="material-symbols-outlined text-2xl">logout</span>
+                            </button>
+                        </Authorized>
+                    </AuthorizeView>
+                </div>
+            </header>
+
+            <main class="p-4 md:p-8">
+                @Body
+            </main>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isSidebarOpen = false;
+
+    // 🚀 Lógica para detectar si ocultar el Layout
+    private bool EsPaginaDeAutenticacion =>
+        NavManager.Uri.Contains("/login", StringComparison.OrdinalIgnoreCase) ||
+        NavManager.Uri.Contains("/registro", StringComparison.OrdinalIgnoreCase);
+
+    private void ToggleSidebar() => isSidebarOpen = !isSidebarOpen;
+
+    [Inject] private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private async Task CerrarSesion()
+    {
+        bool estaSeguro = await JS.InvokeAsync<bool>("confirm", "¿Cerrar sesión?");
+        if (!estaSeguro) return;
+
+        var customAuth = (ImpewebProject.Services.CustomAuthStateProvider)AuthStateProvider;
+        await customAuth.CerrarSesion();
+        NavManager.NavigateTo("/login", forceLoad: true);
+    }
+
+    // Suscribirse a cambios de navegación para cerrar el sidebar automáticamente al cambiar de página
+    protected override void OnInitialized()
+    {
+        NavManager.LocationChanged += (s, e) => { isSidebarOpen = false; StateHasChanged(); };
+    }
+}

@@ -1,0 +1,54 @@
+﻿@page "/cotizaciones"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using ImpewebProject.Models
+@using ImpewebProject.Services
+@using ImpewebProject.Components.Tables
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavManager
+@inject ICotizacionService CotizacionService
+@inject IAuditoriaService AuditoriaService
+
+@if (cotizacionesList == null)
+{
+    <p><em>Cargando datos...</em></p>
+}
+else if(cotizacionesList.Count == 0)
+{
+    <p>No se encontraron registros para este cliente o periodo</p>
+}
+else
+{
+    <TableCotizaciones cotizacionesList="cotizacionesList" EsAdmin="@EsAdmin" RfcActual="@RfcActual" AnioActual="anioSeleccionado" OnAnioChanged="CargarPorAnio" />
+}
+
+@code {
+    private List<VwResumenCotizacion>? cotizacionesList;
+    private bool EsAdmin = false;
+    private string RfcActual = "";
+    private int anioSeleccionado = DateTime.Now.Year;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            RfcActual = user.Identity.Name ?? "";
+            EsAdmin = user.IsInRole("Administrador");
+        }
+        cotizacionesList = await CotizacionService.ObtenerCotizacionesAsync(anioSeleccionado, RfcActual, EsAdmin);
+
+        string rolUsuario = EsAdmin ? "Administrador" : "Cliente";
+        await AuditoriaService.RegistrarAccionAsync(RfcActual, $"Consultó el módulo de Cotizaciones como {rolUsuario}");
+    }
+
+    private async Task CargarPorAnio(int nuevoAnio)
+    {
+        anioSeleccionado = nuevoAnio;
+        cotizacionesList = await CotizacionService.ObtenerCotizacionesAsync(anioSeleccionado, RfcActual, EsAdmin);
+    }
+}

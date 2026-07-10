@@ -1,0 +1,74 @@
+﻿@page "/home"
+@page "/" 
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+
+<AuthorizeView>
+    <Authorized>
+        <div class="p-4 md:p-8">
+          <div class="mb-8">
+            <h2 class="text-3xl font-bold text-slate-900 tracking-tight">Bienvenido, @context.User.Identity?.Name</h2>
+            <p class="text-slate-500 mt-2 text-lg">¿Qué te gustaría gestionar hoy?</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl">
+            <NavLink href="/pedidos" class="group bg-white p-8 rounded-2xl border border-slate-200 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-600/10 transition-all cursor-pointer">
+               <div class="flex justify-between items-start mb-6">
+                        <div class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-sm">
+                            <span class="material-symbols-outlined text-3xl">orders</span>
+                        </div>
+                        <span class="material-symbols-outlined text-slate-300 group-hover:text-blue-500 transition-colors transform group-hover:translate-x-1">arrow_forward</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">Ordenes de Compra</h3>
+                    <p class="text-slate-500 leading-relaxed">Visualice sus ordenes de compra, junto con sus productos y el estado de esta.</p>
+                </NavLink>
+
+            <NavLink href="/facturas" class="group bg-white p-8 rounded-2xl border border-slate-200 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-600/10 transition-all cursor-pointer">
+              <div class="flex justify-between items-start mb-6">
+                <div class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-sm">
+                  <span class="material-symbols-outlined text-3xl">description</span>
+                </div>
+                <span class="material-symbols-outlined text-slate-300 group-hover:text-blue-500 transition-colors transform group-hover:translate-x-1">arrow_forward</span>
+              </div>
+              <h3 class="text-xl font-bold text-slate-900 mb-2">Facturas</h3>
+              <p class="text-slate-500 leading-relaxed">Gestione y visualice todas sus facturas, rastree estados y emita nuevos documentos fiscales sin esfuerzo.</p>
+            </NavLink>
+
+            <NavLink href="/cotizaciones" class="group bg-white p-8 rounded-2xl border border-slate-200 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-600/10 transition-all cursor-pointer">
+              <div class="flex justify-between items-start mb-6">
+                <div class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-sm">
+                  <span class="material-symbols-outlined text-3xl">request_quote</span>
+                </div>
+                <span class="material-symbols-outlined text-slate-300 group-hover:text-blue-500 transition-colors transform group-hover:translate-x-1">arrow_forward</span>
+              </div>
+              <h3 class="text-xl font-bold text-slate-900 mb-2">Cotizaciones</h3>
+              <p class="text-slate-500 leading-relaxed">Cree y haga seguimiento de cotizaciones de precios para sus clientes con plantillas profesionales y actualizaciones en tiempo real.</p>
+            </NavLink>
+
+            <NavLink href="/cartaporte" class="group bg-white p-8 rounded-2xl border border-slate-200 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-600/10 transition-all cursor-pointer">
+              <div class="flex justify-between items-start mb-6">
+                <div class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-sm">
+                  <span class="material-symbols-outlined text-3xl">local_shipping</span>
+                </div>
+                <span class="material-symbols-outlined text-slate-300 group-hover:text-blue-500 transition-colors transform group-hover:translate-x-1">arrow_forward</span>
+              </div>
+              <h3 class="text-xl font-bold text-slate-900 mb-2">Carta Porte</h3>
+              <p class="text-slate-500 leading-relaxed">Genere documentos de envío y cumpla con las regulaciones de transporte en toda su cadena logística.</p>
+            </NavLink>
+
+            <NavLink href="/complementospago" class="group bg-white p-8 rounded-2xl border border-slate-200 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-600/10 transition-all cursor-pointer">
+              <div class="flex justify-between items-start mb-6">
+                <div class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-sm">
+                  <span class="material-symbols-outlined text-3xl">payments</span>
+                </div>
+                <span class="material-symbols-outlined text-slate-300 group-hover:text-blue-500 transition-colors transform group-hover:translate-x-1">arrow_forward</span>
+              </div>
+              <h3 class="text-xl font-bold text-slate-900 mb-2">Complementos de Pago</h3>
+              <p class="text-slate-500 leading-relaxed">Procese registros de pago y concilie transacciones con sus facturas pendientes de forma automática.</p>
+            </NavLink>
+
+          </div>
+        </div>
+    </Authorized>
+</AuthorizeView>
