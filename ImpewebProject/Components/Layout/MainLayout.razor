@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Authorization
+@using ImpewebProject.Services
 @inject NavigationManager NavManager
 
 <div class="min-h-screen bg-[#F7F9FB] flex relative overflow-x-hidden">
@@ -57,7 +58,6 @@
 @code {
     private bool isSidebarOpen = false;
 
-    // 🚀 Lógica para detectar si ocultar el Layout
     private bool EsPaginaDeAutenticacion =>
         NavManager.Uri.Contains("/login", StringComparison.OrdinalIgnoreCase) ||
         NavManager.Uri.Contains("/registro", StringComparison.OrdinalIgnoreCase);
@@ -72,12 +72,11 @@
         bool estaSeguro = await JS.InvokeAsync<bool>("confirm", "¿Cerrar sesión?");
         if (!estaSeguro) return;
 
-        var customAuth = (ImpewebProject.Services.CustomAuthStateProvider)AuthStateProvider;
+        var customAuth = (CustomAuthStateProvider)AuthStateProvider;
         await customAuth.CerrarSesion();
-        NavManager.NavigateTo("/login", forceLoad: true);
+        NavManager.NavigateTo("/logout", forceLoad: true);
     }
 
-    // Suscribirse a cambios de navegación para cerrar el sidebar automáticamente al cambiar de página
     protected override void OnInitialized()
     {
         NavManager.LocationChanged += (s, e) => { isSidebarOpen = false; StateHasChanged(); };

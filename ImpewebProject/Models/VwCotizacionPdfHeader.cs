@@ -28,5 +28,6 @@ namespace ImpewebProject.Models
         public string? ClienteNombre { get; set; }
         public int? AgenteNumero { get; set; }
         public string? AgenteNombre { get; set; }
+        public string? ClienteRfc { get; set; }
     }
 }

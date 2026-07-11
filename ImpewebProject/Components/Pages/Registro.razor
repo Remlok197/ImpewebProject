@@ -5,8 +5,8 @@
 @using ImpewebProject.Models
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Authorization
-
-@inject ImpewebContext Db
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<ImpewebContext> DbFactory
 @inject NavigationManager NavManager
 @inject AuthenticationStateProvider AuthStateProvider
 
@@ -138,8 +138,8 @@
         try
         {
             var rfcLimpio = registroModel.RFC?.Trim().ToUpper() ?? "";
-
-            bool existe = Db.UsuarioWeb.Any(u => u.RFC == rfcLimpio);
+            using var context = DbFactory.CreateDbContext();
+            bool existe = context.UsuarioWeb.Any(u => u.RFC == rfcLimpio);
             if (existe)
             {
                 MensajeError = "Este RFC ya se encuentra registrado en el sistema.";
@@ -158,8 +158,8 @@
                 Activo = true
             };
 
-            Db.UsuarioWeb.Add(nuevoUsuario);
-            await Db.SaveChangesAsync();
+            context.UsuarioWeb.Add(nuevoUsuario);
+            await context.SaveChangesAsync();
 
             MostrarExito = true;
             registroModel = new RegistroDTO();

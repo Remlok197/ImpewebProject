@@ -2,9 +2,11 @@
 @using ImpewebProject.Models
 @using ImpewebProject.Data
 @using Microsoft.AspNetCore.Components.Authorization
-@inject ImpewebContext Db
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<ImpewebContext> DbFactory
 @inject NavigationManager NavManager
 @inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JS
 
 <div class="min-h-screen bg-[#0F172A] flex items-center justify-center p-6">
     <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
@@ -60,9 +62,13 @@
                 </button>
             </EditForm>
         </div>
-
     </div>
 </div>
+
+<form id="cookieLoginForm" action="/Account/Login" method="post" style="display:none;">
+    <input name="rfc" value="@rfcModel" />
+    <input name="rol" value="@rolModel" />
+</form>
 
 @code {
     private LoginDto loginModel = new LoginDto();
@@ -71,6 +77,8 @@
     private bool Cargando = false;
     private bool mostrarPassword = false;
     private bool recordarSesion = false;
+    private string rfcModel = "";
+    private string rolModel = "";
 
     private void TogglePassword() => mostrarPassword = !mostrarPassword;
 
@@ -92,7 +100,8 @@
         try
         {
             var rfcLimpio = loginModel.RFC?.Trim().ToUpper() ?? "";
-            var usuarioDb = Db.UsuarioWeb.FirstOrDefault(u => u.RFC == rfcLimpio);
+            using var context = DbFactory.CreateDbContext();
+            var usuarioDb = await context.UsuarioWeb.FirstOrDefaultAsync(u => u.RFC == rfcLimpio);
 
             if (usuarioDb != null && BCrypt.Net.BCrypt.Verify(loginModel.Password, usuarioDb.PasswordHash))
             {
@@ -106,8 +115,10 @@
 
                 var customAuth = (ImpewebProject.Services.CustomAuthStateProvider)AuthStateProvider;
                 await customAuth.IniciarSesion(usuarioDb.RFC, usuarioDb.Rol ?? "Cliente");
-
-                NavManager.NavigateTo("/home");
+                rfcModel = usuarioDb.RFC;
+                rolModel = usuarioDb.Rol ?? "Cliente";
+                StateHasChanged();
+                await JS.InvokeVoidAsync("eval", "document.getElementById('cookieLoginForm').submit();");
             }
             else
             {

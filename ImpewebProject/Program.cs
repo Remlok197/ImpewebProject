@@ -44,11 +44,16 @@ builder
     .Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/login";
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(20);
+        options.Cookie.Name = "ImpewebAuthCookie";
+        options.LoginPath = "/login"; 
+        options.AccessDeniedPath = "/login";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     });
 
 builder.Services.AddAuthenticationCore();
+
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -61,7 +66,8 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
-
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
@@ -102,6 +108,35 @@ app.MapGet("/api/descargar/xml/{tipo}/{uuid}", async (string tipo, string uuid, 
     }
 
     return Results.NotFound("No se encontró el XML en la base de datos.");
+}).RequireAuthorization();
+
+app.MapPost("/login", async (HttpContext http, IDbContextFactory<ImpewebContext> dbFactory) =>
+{
+    var form = await http.Request.ReadFormAsync();
+    string rfc = form["RFC"].ToString().Trim().ToUpper();
+    string password = form["Password"].ToString();
+
+    using var db = dbFactory.CreateDbContext();
+    var usuario = await db.UsuarioWeb.FirstOrDefaultAsync(u => u.RFC == rfc);
+
+    if (usuario == null || !usuario.Activo || !BCrypt.Net.BCrypt.Verify(password, usuario.PasswordHash))
+        return Results.Redirect("/login?error=1");
+
+    var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.Name, usuario.RFC),
+        new Claim(ClaimTypes.Role, usuario.Rol ?? "Cliente")
+    };
+    var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+    await http.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+
+    return Results.Redirect("/home");
+}).DisableAntiforgery(); // el form de abajo no pasa por el pipeline de Blazor/EditForm
+
+app.MapPost("/logout", async (HttpContext http) =>
+{
+    await http.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    return Results.Redirect("/login");
 });
 
 

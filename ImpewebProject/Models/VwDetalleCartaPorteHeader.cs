@@ -23,5 +23,6 @@ namespace ImpewebProject.Models
         public string? UnidadPeso { get; set; }
         public int? NumTotalMercancias { get; set; }
         public string? LogisticaInversaRecoleccionDevolucion { get; set; }
+        public string? ClienteRfc { get; set; }
     }
 }

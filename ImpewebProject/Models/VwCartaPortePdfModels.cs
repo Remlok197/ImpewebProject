@@ -38,6 +38,7 @@ namespace ImpewebProject.Models
         public string? SelloDigitalCFDI { get; set; }
         public string? SelloDigitalSAT { get; set; }
         public string? CadenaOriginal { get; set; }
+        public string? ClienteRfc { get; set; } 
     }
 
     [Table("VwCartaPortePdfUbicaciones")]
